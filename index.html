@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoE 2: The Wraeclast Compendium (Second Brain)</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- Fallback for icons if needed, though using unicode/svg mostly -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Item Rarity Colors */
+        .text-unique { color: #af6025; }
+        .text-rare { color: #ffff77; }
+        .text-magic { color: #8888ff; }
+        .text-currency { color: #aa9e82; }
+        .text-gem { color: #1ba29b; }
+        
+        /* Elemental Colors */
+        .text-fire { color: #ff4400; }
+        .text-cold { color: #33bbff; }
+        .text-light { color: #ffd700; }
+        .text-chaos { color: #d02090; }
+        .text-phys { color: #e2e8f0; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f0f13; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; border: 1px solid #1a1a1a; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a4a55; }
+        
+        .tab-active {
+            background: linear-gradient(180deg, rgba(66, 32, 6, 0.4) 0%, rgba(120, 53, 15, 0.1) 100%);
+            border-bottom: 2px solid #d97706;
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(217, 119, 6, 0.3);
+        }
+
+        .section-box {
+            background: #0f0f12;
+            border: 1px solid #27272a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        .formula-box {
+            background: #0a0a0c;
+            border-left: 3px solid #d97706;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Utilities */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .animate-slide-in { animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- DATA REPOSITORIES ---
+
+        const missablesData = {
+            "Act 1: Ogham Countryside": [
+                { id: "a1-1", title: "+20 Max Life", location: "Ogham Manor", desc: "Kill 'Candlemass'. Summon via 'Psalm of Madness' (found in Manor).", type: "stat" },
+                { id: "a1-2", title: "+2 Passive Points", location: "Ogham Farmlands", desc: "Find 'Una's Lute' inside a village hut. Return to Una.", type: "passive" },
+                { id: "a1-3", title: "+10% Cold Res", location: "Clearfell", desc: "Kill 'Beira, of the Rotten Pack'. Follow the singing voice to find her.", type: "stat" },
+                { id: "a1-4", title: "+30 Max Spirit", location: "Freythorn (Hunting Grounds)", desc: "Kill 'The King in the Mists'. Access via 'Ominous Altars' quest.", type: "spirit" },
+                { id: "a1-5", title: "Salvage Bench", location: "Ogham Village", desc: "Find Smithing Tools. Unlocks socket crafting materials.", type: "unlock" },
+            ],
+            "Act 2: Vastiri Desert": [
+                { id: "a2-1", title: "Reward Choice", location: "Venom Crypts", desc: "Complete Servi's Quest. Choose: Stun Thresh / Ailment Thresh / Mana Regen.", type: "stat" },
+                { id: "a2-2", title: "+2 Weapon Set Points", location: "Keth", desc: "Kill 'Kabala, Constrictor Queen'. Found in the Venom Pit area.", type: "passive" },
+                { id: "a2-3", title: "+10% Lightning Res", location: "Spires of Deshar", desc: "Interact with 'Sisters of Garukhan' shrine.", type: "stat" },
+                { id: "a2-4", title: "+1 Charm Slot", location: "Valley of the Titans", desc: "Place Sun & Kabala Relics in altar. Mandatory.", type: "unlock" },
+                { id: "a2-5", title: "Zalmarath Kill", location: "Titan Grotto", desc: "Defeat Zalmarath. Often skipped, good loot table.", type: "boss" },
+            ],
+            "Act 3: Vaal Jungles": [
+                { id: "a3-1", title: "+30 Max Spirit", location: "The Azak Bog", desc: "Kill 'Ignagduk, The Bog Witch'. CRITICAL for endgame auras.", type: "spirit" },
+                { id: "a3-2", title: "+2 Passive Points", location: "Jungle Ruins", desc: "Kill 'Mighty Silverfist' (Giant White Gorilla).", type: "passive" },
+                { id: "a3-3", title: "Reforging Bench", location: "The Molten Vault", desc: "Kill 'Mektul'. Unlocks Waystone crafting (Maps).", type: "unlock" },
+                { id: "a3-4", title: "+10% Fire Res", location: "Jiquani's Machinarium", desc: "Kill 'Blackjaw'. Requires Small Soul Cores.", type: "stat" },
+                { id: "a3-5", title: "Blood Sacrifice", location: "Aggorat", desc: "Use Heart dropped by Vaal Goliath. +2 Passive Points.", type: "passive" },
+            ],
+            "Cruel Difficulty Loop": [
+                { id: "c-1", title: "+40 Max Spirit", location: "Cruel Azak Bog", desc: "Kill Ignagduk again on Cruel difficulty.", type: "spirit" },
+                { id: "c-2", title: "+8% Max Life", location: "Cruel Ogham Manor", desc: "Kill Candlemass again on Cruel difficulty.", type: "stat" },
+                { id: "c-3", title: "Cruel Servi Quest", location: "Cruel Venom Crypts", desc: "Reward: Chaos Res, Attributes, or Reduced Slow Potency.", type: "stat" },
+            ]
+        };
+
+        const classData = [
+            { 
+                name: "Warrior", 
+                attr: "Strength", 
+                desc: "Master of kinetic impact and armor breaking.",
+                ascendancies: [
+                    { name: "Titan", desc: "Stun & Slam focus. 'Mountain Splitter' (Slam bonus), 'Hulking Form' (Size/Defense). Crushing Blows." },
+                    { name: "Warbringer", desc: "Warcries & Ancestors. 'Jade Heritage' (Phys Reduction), 'Corpse Explode' on Warcry." },
+                    { name: "Smith of Kitava", desc: "Crafting archetype. 'Living Weapon' (Minions), 'Temper' (Buffs). Can wear Normal armor for bonuses." }
+                ]
+            },
+            { 
+                name: "Sorceress", 
+                attr: "Intelligence", 
+                desc: "Elemental artillery and mana manipulation.",
+                ascendancies: [
+                    { name: "Stormweaver", desc: "Cold/Light. 'Tempest Caller' (Storm on Crit), 'Multiplying Squalls' (+2 Ele Skills)." },
+                    { name: "Chronomancer", desc: "Time manipulation. 'Time Freeze' (Stops enemies), 'Temporal Rift' (Reset state)." },
+                    { name: "Disciple of Varashta", desc: "Djinn Hybrid. 'Ruzhan' (Fire Djinn), 'Sacred Rituals' (ES adds to Armor)." }
+                ]
+            },
+            { 
+                name: "Ranger", 
+                attr: "Dexterity", 
+                desc: "Projectile mastery and evasion.",
+                ascendancies: [
+                    { name: "Deadeye", desc: "Projectiles. 'Mirage Deadeye' (Clones), 'Avidity' (Speed), 'Endless Munitions'." },
+                    { name: "Pathfinder", desc: "Flasks & Poison. 'Overwhelming Toxicity' (Double Poison), 'Enduring Elixirs'." }
+                ]
+            },
+            { 
+                name: "Witch", 
+                attr: "Intelligence", 
+                desc: "Occult magic and minions.",
+                ascendancies: [
+                    { name: "Infernalist", desc: "Fire Minions. 'Demon Form' (Transformation), 'Loyal Hellhound'." },
+                    { name: "Blood Mage", desc: "Life Casting. 'Sanguimancy' (Skills cost Life), 'Vitality Siphon'." },
+                    { name: "Lich", desc: "Minion Bombs. 'Necromantic Conduit' (Explosions), 'Rupture Soul'." }
+                ]
+            },
+            { 
+                name: "Mercenary", 
+                attr: "Str/Dex", 
+                desc: "Crossbows and tactical munitions.",
+                ascendancies: [
+                    { name: "Witchhunter", desc: "Anti-Magic. 'Witchbane' (Breaks Concentration), 'Sorcery Ward'." },
+                    { name: "Gemling Legionnaire", desc: "Socket Body. 'Integrated Efficiency' (+Skill Slots), 'Thaumaturgical Infusion'." },
+                    { name: "Tactician", desc: "Support. 'Close Air Support' (Bombardment), 'Cannons Ready' (Totems)." }
+                ]
+            },
+            { 
+                name: "Monk", 
+                attr: "Dex/Int", 
+                desc: "Mobile melee and chaos.",
+                ascendancies: [
+                    { name: "Invoker", desc: "Elemental Martial Arts. 'Unbound Avatar' (Transformation), 'Elemental Expression'." },
+                    { name: "Acolyte of Chayula", desc: "Chaos/ES. 'Embrace Darkness' (Resource), 'Chaos Mastery'." }
+                ]
+            },
+            { 
+                name: "Druid", 
+                attr: "Str/Int", 
+                desc: "Shapeshifting and elements.",
+                ascendancies: [
+                    { name: "Shaman", desc: "Totems/Runes. 'Wisdom of the Maji' (Unlocks Bonded Items), 'Avatar of Evolution'." },
+                    { name: "Oracle", desc: "Fate/Crits. 'The Lesser Harm' (Unlucky Hits), 'Forced Outcome' (Inevitable Crits)." }
+                ]
+            },
+             { 
+                name: "Huntress", 
+                attr: "Dexterity", 
+                desc: "Spears and Rituals.",
+                ascendancies: [
+                    { name: "Amazon", desc: "Spears. 'Critical Strike' (Overcap -> Crit), 'Elemental Surge'." },
+                    { name: "Ritualist", desc: "Trinkets. 'Unfurled Finger' (+1 Ring Slot), 'Blood Boil'." }
+                ]
+            }
+        ];
+
+        const recipeData = [
+            { result: "Cartographer's Chisel", recipe: "Stone Hammer (20% Qual) + Any Map", note: "Essential for Map Quality" },
+            { result: "Movespeed Boots", recipe: "Normal Boots + Quicksilver Flask + Augmentation", note: "10% MS Early Game" },
+            { result: "Phys % Weapon", recipe: "Weapon + Whetstone + Rustic Sash", note: "Sash rarity determines tier" },
+            { result: "Spell % Weapon", recipe: "Caster Wep + Whetstone + Chain Belt", note: "Belt rarity determines tier" },
+            { result: "Chaos Orb", recipe: "Full Rare Set (ilvl 60-74)", note: "2 Orbs if unidentified" },
+            { result: "Gem Level Down", recipe: "Gem + Orb of Scouring", note: "-1 Level" },
+            { result: "Gem Reset", recipe: "Gem + Orb of Regret", note: "Reset to Level 1" }
+        ];
+
+        const bossData = [
+            { 
+                name: "The Devourer", 
+                loc: "Act 1: Mud Burrow", 
+                tip: "Roll THROUGH the toxic projectile wave, not away. The wave tracks poorly if you close distance.",
+                mechanic: "Burrow & Dust Trails" 
+            },
+            { 
+                name: "Count Geonor", 
+                loc: "Act 1: Manor", 
+                tip: "Break Line-of-Sight behind pillars during 'Blood Beam'. Stacks Corrupted Blood fast.",
+                mechanic: "Blood & Lightning" 
+            },
+            { 
+                name: "Rathbreaker", 
+                loc: "Act 2: Outskirts", 
+                tip: "Wait for the THIRD slam to start descending before rolling. It tracks heavily.",
+                mechanic: "Physical Slams" 
+            },
+             { 
+                name: "Mektul", 
+                loc: "Act 3: Molten Vault", 
+                tip: "Kite away from lava edge. Do NOT stand near Stalagmites (he detonates them).",
+                mechanic: "Rising Lava & Fire" 
+            },
+             { 
+                name: "Doryani", 
+                loc: "Act 3 Boss", 
+                tip: "Multi-stage laser fight. The rotating beams require tight circular movement closer to the center.",
+                mechanic: "Lightning & Blood" 
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const Nav = ({ activeTab, setActiveTab }) => (
+            <nav className="fixed top-0 left-0 right-0 h-14 bg-[#0a0a0c] border-b border-[#27272a] z-50 flex items-center shadow-lg">
+                <div className="w-full max-w-7xl mx-auto px-4 flex justify-between items-center overflow-x-auto no-scrollbar">
+                    <div className="flex-shrink-0 mr-6 flex items-center gap-2">
+                        <span className="text-amber-500 font-cinzel font-bold text-lg tracking-wider">Wraeclast<span className="text-gray-500">Compendium</span></span>
+                    </div>
+                    <div className="flex space-x-1 h-full items-center">
+                        {['Systems', 'Classes', 'Combat', 'Checklist', 'Crafting', 'Endgame', 'Bosses', 'Tips'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-3 py-1.5 text-xs uppercase font-bold tracking-wide rounded transition-all whitespace-nowrap ${
+                                    activeTab === tab 
+                                        ? 'bg-amber-900/30 text-amber-500 border border-amber-900/50' 
+                                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1a1e]'
+                                }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </nav>
+        );
+
+        const SectionHeader = ({ title, subtitle }) => (
+            <div className="mb-6 border-b border-[#27272a] pb-2">
+                <h2 className="text-2xl font-cinzel text-amber-500">{title}</h2>
+                {subtitle && <p className="text-sm text-gray-400 font-mono mt-1">{subtitle}</p>}
+            </div>
+        );
+
+        // --- TAB: SYSTEMS ---
+        const Systems = () => {
+            const [baseSpirit] = useState(100);
+            const [sceptre] = useState(100);
+            const [quests, setQuests] = useState({ act1: false, act3: false, cruel: false });
+            const [gear, setGear] = useState(0);
+
+            const totalSpirit = useMemo(() => {
+                let total = baseSpirit + sceptre + gear;
+                if (quests.act1) total += 30;
+                if (quests.act3) total += 30;
+                if (quests.cruel) total += 40;
+                return total;
+            }, [quests, gear]);
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 space-y-8 animate-slide-in">
+                    {/* Gem Architecture */}
+                    <div className="section-box p-6 rounded-lg">
+                        <SectionHeader title="Gem Architecture" subtitle="Decoupled Power & Attribute Gating" />
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 className="text-amber-400 font-bold mb-2">Attribute Gating Formula</h3>
+                                <div className="formula-box p-4 rounded text-sm text-gray-300 mb-4">
+                                    Req<sub>Total</sub> = Req<sub>Base</sub> + Σ Req<sub>Supports</sub>
+                                </div>
+                                <p className="text-sm text-gray-400 mb-4">
+                                    Supports are not free. They tax your stats.
+                                    <br/><span className="text-red-400">Red Support</span> = Adds STR req.
+                                    <br/><span className="text-green-400">Green Support</span> = Adds DEX req.
+                                    <br/><span className="text-blue-400">Blue Support</span> = Adds INT req.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="bg-[#1a1a1e] p-3 rounded border border-[#27272a]">
+                                    <div className="text-xs font-bold text-gray-500 uppercase">Tier 1 Jeweller's</div>
+                                    <div className="text-white">Upgrades to <span className="text-amber-400">2 Sockets</span></div>
+                                </div>
+                                <div className="bg-[#1a1a1e] p-3 rounded border border-[#27272a]">
+                                    <div className="text-xs font-bold text-gray-500 uppercase">Tier 2 Jeweller's</div>
+                                    <div className="text-white">Upgrades to <span className="text-amber-400">3 Sockets</span></div>
+                                </div>
+                                <div className="bg-[#1a1a1e] p-3 rounded border border-[#27272a]">
+                                    <div className="text-xs font-bold text-gray-500 uppercase">Tier 3 Jeweller's</div>
+                                    <div className="text-white">Upgrades to <span className="text-amber-400">4 Sockets</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Spirit Calculator */}
+                    <div className="section-box p-6 rounded-lg border-t-4 border-blue-600">
+                        <SectionHeader title="Spirit Calculator" subtitle="Resource Planning for Permanent Effects" />
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-400">Base Spirit</span>
+                                    <span className="font-mono">100</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-400">Sceptre Implicit</span>
+                                    <span className="font-mono text-blue-400">+100</span>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="flex items-center space-x-2 cursor-pointer bg-[#1a1a1e] p-2 rounded hover:bg-[#222]">
+                                        <input type="checkbox" checked={quests.act1} onChange={e => setQuests({...quests, act1: e.target.checked})} className="accent-amber-500" />
+                                        <span className="text-sm">King in Mists (Act 1) <span className="text-green-500 text-xs">+30</span></span>
+                                    </label>
+                                    <label className="flex items-center space-x-2 cursor-pointer bg-[#1a1a1e] p-2 rounded hover:bg-[#222]">
+                                        <input type="checkbox" checked={quests.act3} onChange={e => setQuests({...quests, act3: e.target.checked})} className="accent-amber-500" />
+                                        <span className="text-sm">Ignagduk (Act 3) <span className="text-green-500 text-xs">+30</span></span>
+                                    </label>
+                                    <label className="flex items-center space-x-2 cursor-pointer bg-[#1a1a1e] p-2 rounded hover:bg-[#222]">
+                                        <input type="checkbox" checked={quests.cruel} onChange={e => setQuests({...quests, cruel: e.target.checked})} className="accent-amber-500" />
+                                        <span className="text-sm">Cruel Ignagduk <span className="text-green-500 text-xs">+40</span></span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Gear Affixes (Amulet/Chest)</label>
+                                    <input 
+                                        type="number" 
+                                        value={gear} 
+                                        onChange={e => setGear(Number(e.target.value))}
+                                        className="w-full bg-[#1a1a1e] border border-[#333] rounded px-3 py-2 text-sm text-white focus:border-amber-500 outline-none"
+                                        placeholder="Enter amount (e.g. 50)"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col justify-center items-center bg-[#050505] rounded-lg border border-[#333] p-6">
+                                <span className="text-gray-500 text-sm uppercase tracking-widest mb-2">Total Spirit</span>
+                                <span className="text-6xl font-cinzel text-blue-500 font-bold">{totalSpirit}</span>
+                                <div className="mt-6 text-xs text-gray-500 w-full">
+                                    <div className="flex justify-between mb-1"><span>Herald Cost</span> <span>~15</span></div>
+                                    <div className="flex justify-between mb-1"><span>Major Aura</span> <span>~30</span></div>
+                                    <div className="flex justify-between mb-1"><span>Meta Gem</span> <span>~25</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- TAB: CLASSES ---
+        const Classes = () => {
+            return (
+                <div className="max-w-6xl mx-auto p-4 animate-slide-in">
+                    <SectionHeader title="Class & Ascendancy Database" subtitle="Datamined Archetypes" />
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {classData.map(cls => (
+                            <div key={cls.name} className="section-box rounded-lg overflow-hidden group">
+                                <div className="bg-[#1a1a1e] p-3 border-b border-[#27272a] flex justify-between items-center">
+                                    <h3 className="font-bold text-lg text-white group-hover:text-amber-500 transition-colors">{cls.name}</h3>
+                                    <span className="text-xs bg-[#222] px-2 py-1 rounded text-gray-400 border border-[#333]">{cls.attr}</span>
+                                </div>
+                                <div className="p-4">
+                                    <p className="text-xs text-gray-500 italic mb-4">{cls.desc}</p>
+                                    <div className="space-y-4">
+                                        {cls.ascendancies.map(asc => (
+                                            <div key={asc.name} className="relative pl-3 border-l-2 border-[#333] hover:border-amber-600 transition-colors">
+                                                <h4 className="text-sm font-bold text-gray-200">{asc.name}</h4>
+                                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">{asc.desc}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- TAB: COMBAT ---
+        const Combat = () => (
+            <div className="max-w-4xl mx-auto p-4 space-y-6 animate-slide-in">
+                <SectionHeader title="Combat Physics" subtitle="Mitigation & Stability Formulas" />
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                    {/* Armor */}
+                    <div className="section-box p-6 rounded-lg">
+                        <h3 className="text-lg font-cinzel text-red-400 mb-4">Armor Formula</h3>
+                        <div className="formula-box p-4 rounded mb-4 text-center">
+                            DR = A / (A + 5 × D<sub>raw</sub>)
+                        </div>
+                        <p className="text-sm text-gray-300 leading-relaxed mb-4">
+                            Armor provides diminishing returns against larger hits. 
+                            <br/><br/>
+                            <strong>The Rule of 10:</strong> To mitigate <span className="text-amber-400">50%</span> of a hit, your Armor must be <span className="text-amber-400">10x</span> the raw damage.
+                            <br/>
+                            To mitigate <span className="text-amber-400">90%</span> (Cap), it must be <span className="text-amber-400">45x</span> the damage.
+                        </p>
+                        <div className="bg-[#1a1a1e] p-3 rounded border border-red-900/30">
+                            <span className="text-xs text-red-400 font-bold uppercase block mb-1">Armor Breaking</span>
+                            <span className="text-xs text-gray-400">Maces and Slams reduce enemy Armor Integrity. Broken armor = 0 mitigation + Vulnerable to Crits.</span>
+                        </div>
+                    </div>
+
+                    {/* Stagger */}
+                    <div className="section-box p-6 rounded-lg">
+                        <h3 className="text-lg font-cinzel text-yellow-400 mb-4">Stagger (Poise)</h3>
+                        <p className="text-sm text-gray-300 mb-4">
+                            Bosses have an "Internal Stability" bar (Yellow bar).
+                        </p>
+                        <ul className="space-y-3 text-sm text-gray-400">
+                            <li className="flex gap-3">
+                                <span className="text-yellow-500 font-bold">1.</span>
+                                <span>Crowd Control (Freeze/Stun) does not apply immediately. It fills the bar.</span>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-yellow-500 font-bold">2.</span>
+                                <span>Once full, the boss is <strong>Staggered</strong> (interrupts actions) and the ailment applies.</span>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-yellow-500 font-bold">3.</span>
+                                <span><strong>Thresholds:</strong> Heavy slow hits build stagger faster than fast light hits.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- TAB: CHECKLIST ---
+        const Checklist = () => {
+            const [checked, setChecked] = useState(() => JSON.parse(localStorage.getItem('poe2_checklist') || '{}'));
+
+            useEffect(() => {
+                localStorage.setItem('poe2_checklist', JSON.stringify(checked));
+            }, [checked]);
+
+            const toggle = (id) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+            const reset = () => { if(confirm("Reset all progress?")) setChecked({}); };
+
+            const getTypeColor = (type) => {
+                switch(type) {
+                    case 'spirit': return 'text-blue-400';
+                    case 'stat': return 'text-green-400';
+                    case 'passive': return 'text-amber-400';
+                    case 'unlock': return 'text-purple-400';
+                    default: return 'text-gray-400';
+                }
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto p-4 animate-slide-in">
+                    <div className="flex justify-between items-center mb-6 border-b border-[#27272a] pb-2">
+                        <h2 className="text-2xl font-cinzel text-amber-500">Campaign Missables</h2>
+                        <button onClick={reset} className="text-xs text-red-500 hover:text-red-400 underline">Reset All</button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {Object.entries(missablesData).map(([act, items]) => (
+                            <div key={act} className="section-box rounded-lg overflow-hidden">
+                                <div className="bg-[#1a1a1e] px-4 py-2 border-b border-[#27272a] flex justify-between items-center">
+                                    <h3 className="font-bold text-gray-200">{act}</h3>
+                                    <span className="text-xs font-mono text-gray-500">
+                                        {items.filter(i => checked[i.id]).length}/{items.length}
+                                    </span>
+                                </div>
+                                <div className="divide-y divide-[#222]">
+                                    {items.map(item => (
+                                        <div 
+                                            key={item.id}
+                                            onClick={() => toggle(item.id)}
+                                            className={`p-4 cursor-pointer hover:bg-[#1f1f23] transition-colors flex gap-4 ${checked[item.id] ? 'opacity-40 bg-[#0a0a0c]' : ''}`}
+                                        >
+                                            <div className={`w-5 h-5 rounded border mt-0.5 flex-shrink-0 flex items-center justify-center ${checked[item.id] ? 'bg-amber-600 border-amber-600' : 'border-[#444]'}`}>
+                                                {checked[item.id] && <span className="text-white text-xs">✓</span>}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`font-bold text-sm ${getTypeColor(item.type)}`}>{item.title}</span>
+                                                    <span className="text-xs text-gray-600 uppercase border border-[#333] px-1 rounded">{item.type}</span>
+                                                </div>
+                                                <div className="text-sm text-gray-400">
+                                                    <span className="text-gray-500 font-semibold">{item.location}</span>
+                                                    <span className="mx-2 text-[#333]">|</span>
+                                                    {item.desc}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- TAB: CRAFTING ---
+        const Crafting = () => {
+            return (
+                <div className="max-w-4xl mx-auto p-4 space-y-8 animate-slide-in">
+                    {/* Runes */}
+                    <div className="section-box p-6 rounded-lg">
+                        <SectionHeader title="Runes & Sockets" subtitle="Campaign Resists & Stat Fixing" />
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left text-gray-400">
+                                <thead className="text-xs text-gray-500 uppercase bg-[#1a1a1e]">
+                                    <tr>
+                                        <th className="px-4 py-2">Rune</th>
+                                        <th className="px-4 py-2">Weapon Effect</th>
+                                        <th className="px-4 py-2">Armor Effect</th>
+                                        <th className="px-4 py-2">Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#27272a]">
+                                    <tr>
+                                        <td className="px-4 py-3 text-white font-bold">Iron</td>
+                                        <td>Phys Dmg</td>
+                                        <td>+Armor</td>
+                                        <td>Good for Warrior</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-4 py-3 text-blue-300 font-bold">Glacial</td>
+                                        <td>Cold Dmg</td>
+                                        <td>+Cold Res</td>
+                                        <td>Act 1 Essential</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-4 py-3 text-red-300 font-bold">Desert</td>
+                                        <td>Fire Dmg</td>
+                                        <td>+Fire Res</td>
+                                        <td>Act 2 Essential</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-4 py-3 text-yellow-300 font-bold">Storm</td>
+                                        <td>Light Dmg</td>
+                                        <td>+Light Res</td>
+                                        <td>Act 2/3 Essential</td>
+                                    </tr>
+                                     <tr>
+                                        <td className="px-4 py-3 text-white font-bold">Bonded*</td>
+                                        <td colSpan="3" className="italic text-xs text-gray-500">
+                                            *Requires Druid "Shaman" Ascendancy to unlock secondary powerful effects.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Vendor Recipes */}
+                    <div className="section-box p-6 rounded-lg">
+                        <SectionHeader title="Vendor Recipes" subtitle="Verified for Early Access" />
+                        <div className="grid md:grid-cols-2 gap-4">
+                            {recipeData.map((r, i) => (
+                                <div key={i} className="bg-[#1a1a1e] p-3 rounded border border-[#27272a] hover:border-amber-900/50">
+                                    <h4 className="text-amber-500 font-bold text-sm mb-1">{r.result}</h4>
+                                    <p className="text-xs text-gray-300 mb-1">{r.recipe}</p>
+                                    <p className="text-[10px] text-gray-500 italic">{r.note}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* Soul Cores */}
+                    <div className="section-box p-6 rounded-lg border-t-4 border-purple-600">
+                        <SectionHeader title="Endgame Soul Cores" subtitle="Trial of Chaos Rewards" />
+                        <div className="space-y-3">
+                             <div className="flex justify-between items-center text-sm border-b border-[#222] pb-2">
+                                <span className="text-purple-400 font-bold">Azcapa</span>
+                                <span className="text-gray-400">Weapon: <span className="text-blue-400">+15 Spirit</span> | Gloves: <span className="text-yellow-400">Gold Find</span></span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm border-b border-[#222] pb-2">
+                                <span className="text-purple-400 font-bold">Topotante</span>
+                                <span className="text-gray-400">Weapon: <span className="text-red-400">Ele Pen</span> | Boots: <span className="text-green-400">Ailment Thresh</span></span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-purple-400 font-bold">Ticaba</span>
+                                <span className="text-gray-400">Weapon: <span className="text-amber-400">Crit Dmg</span> | Armor: <span className="text-white">Less Crit Taken</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- TAB: ENDGAME ---
+        const Endgame = () => (
+             <div className="max-w-4xl mx-auto p-4 space-y-6 animate-slide-in">
+                {/* Waystones */}
+                <div className="section-box p-6 rounded-lg">
+                    <SectionHeader title="Waystones" subtitle="The New Map System" />
+                    <div className="flex gap-4 mb-4">
+                        <div className="flex-1 bg-[#1a1a1e] p-4 rounded border-l-2 border-green-500">
+                            <h4 className="text-green-500 font-bold mb-2">Prefixes (Rewards)</h4>
+                            <p className="text-xs text-gray-400">Gold Find, Item Rarity, Pack Size. Always aim for high prefixes.</p>
+                        </div>
+                        <div className="flex-1 bg-[#1a1a1e] p-4 rounded border-l-2 border-red-500">
+                            <h4 className="text-red-500 font-bold mb-2">Suffixes (Difficulty)</h4>
+                            <p className="text-xs text-gray-400">Monsters Poison, Players Cursed, No Regen. These kill runs.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tablets */}
+                <div className="section-box p-6 rounded-lg">
+                    <SectionHeader title="Precursor Tablets" subtitle="Juicing Mechanics" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-[#1a1a1e] rounded">
+                            <div className="text-purple-500 font-bold mb-1">Breach</div>
+                            <div className="text-[10px] text-gray-400">XP Density</div>
+                        </div>
+                        <div className="text-center p-3 bg-[#1a1a1e] rounded">
+                            <div className="text-gray-300 font-bold mb-1">Delirium</div>
+                            <div className="text-[10px] text-gray-400">Cluster Jewels</div>
+                        </div>
+                        <div className="text-center p-3 bg-[#1a1a1e] rounded">
+                            <div className="text-amber-500 font-bold mb-1">Expedition</div>
+                            <div className="text-[10px] text-gray-400">Currency/Haggle</div>
+                        </div>
+                        <div className="text-center p-3 bg-[#1a1a1e] rounded">
+                            <div className="text-red-500 font-bold mb-1">Overseer</div>
+                            <div className="text-[10px] text-gray-400">Target Bosses</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Trials */}
+                <div className="section-box p-6 rounded-lg border-t-4 border-amber-600">
+                    <SectionHeader title="Trials of Ascendancy" subtitle="No longer Labyrinths" />
+                    <div className="space-y-6">
+                        <div>
+                            <h3 className="text-amber-500 font-bold mb-1">Trial of the Sekhemas</h3>
+                            <p className="text-xs text-gray-500 italic mb-2">Located in Act 2/Endgame. Sanctum-Style.</p>
+                            <p className="text-sm text-gray-300">
+                                You have an <strong>Honour Bar</strong>. If it hits 0, you fail.
+                                <br/>Boss: <strong>Zarokh, the Temporal</strong>.
+                            </p>
+                        </div>
+                        <div className="border-t border-[#333] pt-4">
+                            <h3 className="text-amber-500 font-bold mb-1">Trial of Chaos</h3>
+                            <p className="text-xs text-gray-500 italic mb-2">Endgame Only. Ultimatum-Style.</p>
+                            <p className="text-sm text-gray-300">
+                                10 Rounds. Choose a <strong>Tribulation</strong> (Debuff) each round.
+                                <br/>Boss: <strong>The Trialmaster</strong> (Round 10).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- TAB: BOSSES ---
+        const Bosses = () => (
+             <div className="max-w-4xl mx-auto p-4 animate-slide-in">
+                <SectionHeader title="Boss Strategy" subtitle="Mechanics & Counters" />
+                <div className="space-y-4">
+                    {bossData.map((boss, i) => (
+                        <div key={i} className="section-box p-4 rounded-lg flex flex-col md:flex-row gap-4 items-start">
+                            <div className="md:w-1/4">
+                                <h3 className="font-bold text-white">{boss.name}</h3>
+                                <p className="text-xs text-amber-500">{boss.loc}</p>
+                                <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">{boss.mechanic}</p>
+                            </div>
+                            <div className="md:w-3/4 bg-[#1a1a1e] p-3 rounded border border-[#333] w-full">
+                                <p className="text-sm text-gray-300"><strong className="text-green-400">Strategy:</strong> {boss.tip}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+             </div>
+        );
+
+        // --- TAB: TIPS ---
+        const Tips = () => (
+            <div className="max-w-4xl mx-auto p-4 space-y-6 animate-slide-in">
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="section-box p-6 rounded-lg">
+                        <h3 className="text-lg font-cinzel text-unique mb-4">Chase Uniques</h3>
+                        <ul className="space-y-3 text-sm">
+                            <li className="flex justify-between border-b border-[#222] pb-1">
+                                <span className="text-unique font-bold">Headhunter</span>
+                                <span className="text-gray-400">Steals Monster Mods</span>
+                            </li>
+                            <li className="flex justify-between border-b border-[#222] pb-1">
+                                <span className="text-unique font-bold">Astramentis</span>
+                                <span className="text-gray-400">+100 All Attributes (Gem Req)</span>
+                            </li>
+                            <li className="flex justify-between border-b border-[#222] pb-1">
+                                <span className="text-unique font-bold">Svalinn</span>
+                                <span className="text-gray-400">Lucky Block Chance</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                     <div className="section-box p-6 rounded-lg">
+                        <h3 className="text-lg font-cinzel text-green-400 mb-4">Trade Economy</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-200">Currency Exchange</h4>
+                                <p className="text-xs text-gray-400">
+                                    Instant buyout for Gold Tax. Used for: Essence, Currency, Maps.
+                                    <br/><span className="text-red-400">Cost: Gold + Item</span>
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-200">Direct Trade</h4>
+                                <p className="text-xs text-gray-400">
+                                    Manual whisper. Used for: Gear, Specific Rolls.
+                                    <br/><span className="text-green-400">Cost: Item Only (Time intensive)</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- MAIN APP ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('Systems');
+
+            const renderContent = () => {
+                switch (activeTab) {
+                    case 'Systems': return <Systems />;
+                    case 'Classes': return <Classes />;
+                    case 'Combat': return <Combat />;
+                    case 'Checklist': return <Checklist />;
+                    case 'Crafting': return <Crafting />;
+                    case 'Endgame': return <Endgame />;
+                    case 'Bosses': return <Bosses />;
+                    case 'Tips': return <Tips />;
+                    default: return <Systems />;
+                }
+            };
+
+            return (
+                <div className="min-h-screen pb-20 pt-16">
+                    <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
+                    <main>
+                        {renderContent()}
+                    </main>
+                    <footer className="text-center py-8 text-gray-600 text-xs font-mono">
+                        <p>Wraeclast Compendium v2.0 // Exile Tools</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
