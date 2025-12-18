@@ -714,78 +714,222 @@
 
     const Endgame = () => (
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
-        <div className="card p-6">
-          <SectionHeader title="The Waystone Loop" />
-          <p className="text-gray-300 mb-4">Access the Atlas with <strong>Waystones</strong> (Maps replacement) and amplify with <strong>Precursor Tablets</strong>.</p>
-          <div className="grid md:grid-cols-3 gap-4 text-center mb-4">
-            <div className="subcard p-4 border border-amber-700"><div className="text-3xl mb-2">📜</div><div className="font-bold">Craft Waystone</div><div className="text-xs text-gray-400 mt-1"><span className="text-amber-400">Prefixes = Rewards</span>, <span className="text-red-400">Suffixes = Difficulty</span></div></div>
-            <div className="subcard p-4 border border-blue-700"><div className="text-3xl mb-2">⚡</div><div className="font-bold">Socket Tablets</div><div className="text-xs text-gray-400 mt-1">Add league mechanics deterministically</div></div>
-            <div className="subcard p-4 border border-purple-700"><div className="text-3xl mb-2">🌳</div><div className="font-bold">Atlas Passives</div><div className="text-xs text-gray-400 mt-1">Spec for your target mechanic</div></div>
-          </div>
-          <div className="bg-amber-900/10 border border-amber-900/30 rounded p-4 text-sm text-gray-300">
-            Juicing: High-tier Waystone with Rarity/Gold prefixes + 3× matching Tablets (e.g., Breach) + Atlas specialization = extreme density and rewards.
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="card p-6">
-            <SectionHeader title="Waystone Modifiers" size="xl" />
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-green-400 font-bold text-sm mb-1">Prefixes (Rewards)</h4>
-                <ul className="text-xs text-gray-300 space-y-1">
-                  <li>Increased Item Rarity / Quantity</li>
-                  <li>Additional Gold Drops</li>
-                  <li>Pack Size +X%</li>
-                  <li>Additional Tablet Slots</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-red-400 font-bold text-sm mb-1">Suffixes (Difficulty)</h4>
-                <ul className="text-xs text-gray-300 space-y-1">
-                  <li>Monsters deal X% extra Elemental Damage</li>
-                  <li>Players are Cursed (e.g., Vulnerability)</li>
-                  <li>Monsters have +X% Critical Chance</li>
-                  <li>Players have -X% Recovery Rate</li>
-                  <li>Area contains hazardous ground (Desecrated, etc.)</li>
-                </ul>
-              </div>
+        <div className="card p-6 border-amber-800/50 bg-gradient-to-b from-[#151519] to-[#0f0f12]">
+          <SectionHeader title="The Ziggurat Refuge: Operational Hub" size="3xl" />
+          <p className="text-gray-400 text-sm mb-4">Post-campaign command center. Contains the Map Device, Currency Exchange, and Realm Gate.</p>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="subcard p-4">
+              <h4 className="font-bold text-amber-500 mb-1">Doryani (Thaumaturge)</h4>
+              <p className="text-xs text-gray-400">Sells Waystones (restocks on level-up) to prevent soft-locks. Handles Gold-based Respecs.</p>
+            </div>
+            <div className="subcard p-4">
+              <h4 className="font-bold text-amber-500 mb-1">Alva (Exchange)</h4>
+              <p className="text-xs text-gray-400">Instant currency trading (e.g., Chaos ↔ Divine). Uses Gold as a transaction fee.</p>
+            </div>
+            <div className="subcard p-4">
+              <h4 className="font-bold text-purple-400 mb-1">Realm Gate</h4>
+              <p className="text-xs text-gray-400">Input Splinters (50/100/150) here to fight Mechanic Bosses (Xesht, Simulacrum, etc.).</p>
             </div>
           </div>
-          <div className="card p-6">
-            <SectionHeader title="Precursor Tablets" size="xl" />
-            <ul className="space-y-2 text-sm">
-              <li className="flex"><span className="w-24 text-purple-400 font-bold">Breach</span><span className="text-gray-300">XP density, splinters</span></li>
-              <li className="flex"><span className="w-24 text-gray-400 font-bold">Delirium</span><span className="text-gray-300">High difficulty, cluster jewels</span></li>
-              <li className="flex"><span className="w-24 text-amber-400 font-bold">Expedition</span><span className="text-gray-300">Haggle currency, runed encounters</span></li>
-              <li className="flex"><span className="w-24 text-red-400 font-bold">Overseer</span><span className="text-gray-300">Adds map bosses with unique loot tables</span></li>
-            </ul>
+        </div>
+
+        {/* --- Atlas & Waystones --- */}
+        <div className="card p-6">
+          <SectionHeader title="The Infinite Atlas & Waystones" />
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-200 mb-2">Directional Exploration</h3>
+              <p className="text-sm text-gray-300 mb-2">The Atlas is procedurally generated. You push back the "Fog of War" by completing maps. Biomes (Desert, Forest, Citadel) are clustered, allowing you to target-farm specific drop tables.</p>
+              <div className="p-3 border border-purple-800/30 bg-purple-900/10 rounded text-sm text-purple-200 flex items-start gap-3">
+                <span className="text-2xl">🗼</span>
+                <div>
+                  <span className="font-bold">Precursor Towers (Beacons)</span><br/>
+                  Always prioritize these. Completing a Tower map detonates the Fog of War in a huge radius, revealing Citadels and Corruption Nexuses. They also guarantee a Precursor Tablet drop.
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[#333] pt-4">
+               <h3 className="text-xl font-bold text-gray-200 mb-4">Waystone Architecture</h3>
+               <div className="grid md:grid-cols-2 gap-6">
+                 <div>
+                   <h4 className="text-amber-400 font-bold text-sm mb-2">Tier Hierarchy</h4>
+                   <ul className="text-xs text-gray-300 space-y-1">
+                     <li><span className="text-white font-bold">T1–5 (Lvl 65-69):</span> Establish base. Buy from Doryani.</li>
+                     <li><span className="text-white font-bold">T6–10 (Lvl 70-74):</span> Rare crafting begins. Res penalties spike.</li>
+                     <li><span className="text-white font-bold">T11–15 (Lvl 75-79):</span> Endgame grind. T15 is the natural drop cap.</li>
+                     <li><span className="text-white font-bold">T16 (Lvl 80):</span> Pinnacle. Created by corrupting T15s or using Irradiated Tablets.</li>
+                   </ul>
+                 </div>
+                 <div>
+                   <h4 className="text-blue-400 font-bold text-sm mb-2">Advanced Crafting</h4>
+                   <ul className="text-xs text-gray-300 space-y-2">
+                     <li><strong>Alchemy on Magic:</strong> Upgrade Magic to Rare without scouring.</li>
+                     <li><strong>3-to-1 Recipe:</strong> 3 Waystones of Tier X = 1 Waystone of Tier X+1.</li>
+                     <li><strong>Corruption:</strong> Used on T15s for +1 Tier (T16) chance.</li>
+                   </ul>
+                 </div>
+               </div>
+               <div className="mt-4 p-3 bg-black/30 border border-[#333] rounded text-xs text-gray-300">
+                  <strong>Waystone Anatomy:</strong> <span className="text-green-400">Prefixes</span> are Rewards (Quantity, Gold, Pack Size). <span className="text-red-400">Suffixes</span> are Difficulty (Damage as Extra Fire, Less Recovery, Player Curses).
+               </div>
+            </div>
           </div>
         </div>
 
+        {/* --- Precursor Tablets --- */}
         <div className="card p-6">
-          <SectionHeader title="Trials of Ascendancy" />
+          <SectionHeader title="Precursor Tablet Framework (Patch 0.3.1)" />
+          <p className="text-gray-300 mb-4 text-sm">Tablets are no longer applied to Towers. They are placed in the Map Device alongside Waystones. Complexity dictates capacity.</p>
+          
+          <div className="grid md:grid-cols-2 gap-6 mb-4">
+            <div className="subcard p-4 border border-blue-900/30">
+              <h4 className="font-bold text-blue-400 mb-2">Slotting Rules</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li><span className="text-white">0–2 Modifiers:</span> 1 Tablet Slot</li>
+                <li><span className="text-white">3–5 Modifiers:</span> 2 Tablet Slots</li>
+                <li><span className="text-white">6+ Modifiers:</span> 3 Tablet Slots</li>
+              </ul>
+              <p className="text-xs text-gray-500 mt-2">Strategy: Use Corrupted 8-mod maps for 3 slots. "Golden" strategy: Roll 3 tablets with Quant% for massive gold returns.</p>
+            </div>
+            <div className="subcard p-4 border border-green-900/30">
+              <h4 className="font-bold text-green-400 mb-2">Key Tablet Types</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li><strong className="text-purple-400">Breach/Delirium:</strong> Guarantees mechanic spawn.</li>
+                <li><strong className="text-red-400">Overseer:</strong> Adds map bosses. Best for Waystone sustain.</li>
+                <li><strong className="text-amber-400">Irradiated:</strong> +1 Area Level. Critical for T16 access.</li>
+                <li><strong className="text-yellow-400">Precursor:</strong> Generic Quant/Rarity. Roll with Alterations.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Endgame Trials --- */}
+        <div className="card p-6">
+          <SectionHeader title="The Endgame Trials" size="xl" />
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="subcard p-4 border border-yellow-900/40">
-              <h4 className="font-bold text-yellow-300 mb-2">Trial of the Sekhemas (Sanctum-style)</h4>
-              <ul className="text-sm text-gray-300 space-y-1">
-                <li>Honour Bar: Non-regenerating HP for the run</li>
-                <li>Buy Boons between rooms to stabilize</li>
-                <li>Boss: Zarokh, the Temporal</li>
-                <li>Rewards: Ascendancy Points, Jewels, Relics</li>
+            <div className="subcard p-4 border border-yellow-900/30">
+              <h4 className="font-bold text-yellow-500 text-sm mb-1">Trial of the Sekhemas</h4>
+              <p className="text-xs text-gray-400 mb-2">Act 2 Maraketh Theme. Dungeon Run.</p>
+              <ul className="text-xs text-gray-300 list-disc pl-4 space-y-1">
+                <li><strong>Mechanic:</strong> Honor Bar (No regen HP). Rewards dodging.</li>
+                <li><strong>Rewards:</strong> Jewels, Relics, Ascendancy Points.</li>
+                <li><strong>Boss:</strong> Zarokh, the Temporal.</li>
               </ul>
             </div>
-            <div className="subcard p-4 border border-red-900/40">
-              <h4 className="font-bold text-red-300 mb-2">Trial of Chaos (Ultimatum-style)</h4>
-              <ul className="text-sm text-gray-300 space-y-1">
-                <li>10 rounds; pick a stacking Tribulation each round</li>
-                <li>Avoid: Reduced Recovery, Damaged Defenses</li>
-                <li>Boss: Trialmaster (Round 10)</li>
-                <li>Rewards: Ascendancy Points, Soul Cores, Vaal Orbs</li>
+            <div className="subcard p-4 border border-red-900/30">
+              <h4 className="font-bold text-red-500 text-sm mb-1">Trial of Chaos</h4>
+              <p className="text-xs text-gray-400 mb-2">Act 3 Vaal Theme. Ultimatum Style.</p>
+              <ul className="text-xs text-gray-300 list-disc pl-4 space-y-1">
+                <li><strong>Mechanic:</strong> 10 Rounds. Pick a stacking "Tribulation" each round.</li>
+                <li><strong>Rewards:</strong> Soul Cores, Vaal Orbs.</li>
+                <li><strong>Boss:</strong> The Trialmaster (Round 10).</li>
               </ul>
             </div>
           </div>
         </div>
+
+        {/* --- Mechanics & Bosses --- */}
+        <div className="grid md:grid-cols-2 gap-6">
+           <div className="card p-6">
+              <SectionHeader title="Major Mechanics & Keys" size="xl" />
+              <div className="space-y-4">
+                <div className="border-l-2 border-purple-600 pl-3">
+                  <h4 className="font-bold text-white text-sm">Breach (The Swarm)</h4>
+                  <p className="text-xs text-gray-400">Boss: <strong>Xesht</strong>. Key: Breach Splinters. Rewards: Catalysts, Breach Rings. Tree unlock: Defeat Xesht at difficulty 1/2/3.</p>
+                </div>
+                <div className="border-l-2 border-red-600 pl-3">
+                  <h4 className="font-bold text-white text-sm">Ritual (The Gamble)</h4>
+                  <p className="text-xs text-gray-400">Boss: <strong>King in the Mists</strong>. Key: Petition Splinters. Rewards: Omens, Deferral system. </p>
+                </div>
+                <div className="border-l-2 border-gray-400 pl-3">
+                  <h4 className="font-bold text-white text-sm">Delirium (The Madness)</h4>
+                  <p className="text-xs text-gray-400">Boss: <strong>Simulacrum (Kosis)</strong>. Key: Simulacrum Splinters. Rewards: Distilled Emotions (Use on Amulets or Maps for Perma-Fog).</p>
+                </div>
+                <div className="border-l-2 border-yellow-600 pl-3">
+                  <h4 className="font-bold text-white text-sm">Expedition (The Excavation)</h4>
+                  <p className="text-xs text-gray-400">Boss: <strong>Olroth</strong>. Key: Runic Splinters. Rewards: Logbooks, Haggling Currency.</p>
+                </div>
+                <div className="border-l-2 border-green-600 pl-3">
+                  <h4 className="font-bold text-white text-sm">Abyss (The Depths)</h4>
+                  <p className="text-xs text-gray-400">Boss: <strong>Lich</strong>. Enter Abyssal Depths via cracks. Rewards: Ghastly Eye Jewels, Stygian Vise.</p>
+                </div>
+              </div>
+           </div>
+
+           <div className="card p-6">
+              <SectionHeader title="The Boss Ladder" size="xl" />
+              <div className="space-y-3 relative">
+                 {/* Visual Connector Line */}
+                 <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-[#333]"></div>
+
+                 <div className="relative pl-6">
+                   <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-blue-900 border-2 border-blue-500"></div>
+                   <h4 className="font-bold text-blue-400 text-sm">1. Powerful Map Bosses</h4>
+                   <p className="text-xs text-gray-400">Primary source of +1 Tier Waystones. Never skip.</p>
+                 </div>
+
+                 <div className="relative pl-6">
+                   <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-purple-900 border-2 border-purple-500"></div>
+                   <h4 className="font-bold text-purple-400 text-sm">2. Anomaly Bosses</h4>
+                   <p className="text-xs text-gray-400">"Mansion in the Mists". Mid-tier pinnacle. Required for Map Boss Tree.</p>
+                 </div>
+
+                 <div className="relative pl-6">
+                   <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-red-900 border-2 border-red-500"></div>
+                   <h4 className="font-bold text-red-400 text-sm">3. Citadel Bosses (T15+)</h4>
+                   <p className="text-xs text-gray-400">Geonor, Jamanra, Doryani. Drop <strong>Crisis Fragments</strong>.</p>
+                 </div>
+
+                 <div className="relative pl-6">
+                   <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-amber-900 border-2 border-amber-500"></div>
+                   <h4 className="font-bold text-amber-500 text-sm">4. Arbiter of Ash</h4>
+                   <p className="text-xs text-gray-400">Pinnacle Boss. Accessed via Burning Monolith with 3 Crisis Fragments.</p>
+                 </div>
+
+                 <div className="relative pl-6">
+                   <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-white border-2 border-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.6)]"></div>
+                   <h4 className="font-bold text-white text-sm">5. Uber Arbiter</h4>
+                   <p className="text-xs text-gray-400">Requires <strong>Calamity Fragments</strong> (dropped by Citadels after fully unlocking Map Boss Tree).</p>
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        {/* --- Atlas Passives & Corruption --- */}
+        <div className="card p-6">
+          <SectionHeader title="Atlas Passives & Corruption" />
+          <div className="grid md:grid-cols-2 gap-6">
+             <div>
+               <h3 className="text-lg font-bold text-white mb-2">Modular Atlas Trees</h3>
+               <p className="text-sm text-gray-300 mb-2">Separate pages for Core, Breach, Ritual, etc. Specializing doesn't cost sustain.</p>
+               <ul className="text-xs text-gray-400 list-disc pl-4 space-y-2">
+                 <li><strong>Core Points (40):</strong> From Corruption Nexuses (T1,3,6,9,12,15) and Unique Maps.</li>
+                 <li><strong>Mechanic Points (8 each):</strong> Earned by defeating the Mechanic's Boss at increasing difficulty (Splinter gating).</li>
+                 <li><strong>Map Boss Points (10):</strong>
+                   <ul className="list-decimal pl-4 mt-1 text-amber-500/80">
+                      <li>Kill Map Boss in Lvl 79+ Area w/ 6+ Mods</li>
+                      <li>Kill Map Boss in Lvl 80+ Area (T16)</li>
+                      <li>Kill Anomaly Boss</li>
+                      <li>Kill Citadel Boss</li>
+                      <li>Kill Arbiter of Ash</li>
+                   </ul>
+                 </li>
+               </ul>
+             </div>
+             <div>
+               <h3 className="text-lg font-bold text-red-400 mb-2">Corruption & Cleansing</h3>
+               <p className="text-sm text-gray-300 mb-2">Red veins on Atlas = Corruption. Map modifiers are nasty.</p>
+               <div className="p-2 border border-blue-900/30 bg-blue-900/10 rounded">
+                 <div className="text-xs text-blue-200">
+                   <strong>Cleansing:</strong> Defeating a Nexus Boss turns the zone Blue/Gold.
+                   <br/>Reward: Positive Modifiers (e.g., "Increased Fracturing Orb Drop Rate").
+                 </div>
+               </div>
+             </div>
+          </div>
+        </div>
+
       </div>
     );
 
