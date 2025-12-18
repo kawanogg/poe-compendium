@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PoE 2: The Wraeclast Compendium — Second Brain</title>
+  <!-- React 18, ReactDOM 18, Babel, Tailwind (keep CDN stack as requested) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+    :root {
+      --bg: #0b0b0e;
+      --panel: #151519;
+      --panel-2: #1e1e24;
+      --muted: #9ca3af;
+      --muted-2: #6b7280;
+      --border: #333;
+      --gold: #fbbf24;
+      --gold-2: #d97706;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    .font-cinzel { font-family: 'Cinzel', serif; }
+    .text-unique { color: #af6025; }
+    .text-rare { color: #ffff77; }
+    .text-magic { color: #8888ff; }
+    .text-currency { color: #aa9e82; }
+    .text-fire { color: #ff4400; }
+    .text-cold { color: #33bbff; }
+    .text-light { color: #ffd700; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1a1a20; }
+    ::-webkit-scrollbar-thumb { background: #4a4a55; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #646473; }
+
+    .tab-active {
+      background: linear-gradient(180deg, rgba(66, 32, 6, 0.4) 0%, rgba(120, 53, 15, 0.1) 100%);
+      border-bottom: 2px solid var(--gold-2);
+      color: var(--gold);
+    }
+
+    .animate-fade-in { animation: fadeIn 0.25s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .subcard { background: var(--panel-2); border-radius: 0.5rem; }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useMemo, useState, useEffect } = React;
+
+    // ======================= Data: Missables (Acts + Cruel Loop) =======================
+    const missablesData = {
+      'Act 1: Ogham Countryside': [
+        { id: 'a1-spirit-king', title: '+30 Max Spirit', location: 'Freythorn (Hunting Grounds)', desc: "King in the Mists — CRITICAL. Complete Rituals to summon.", important: true },
+        { id: 'a1-una', title: '+2 Passive Points', location: "Ogham Farmlands", desc: "Find Una's Lute in a ruined hut. Return to Una.", important: true },
+        { id: 'a1-beira', title: '+10% Cold Resistance', location: 'Clearfell', desc: 'Beira of the Rotten Pack. Follow the singing voice.', important: true },
+        { id: 'a1-candlemass', title: '+20 Max Life', location: 'Ogham Manor', desc: 'Candlemass. Summon via Psalm of Madness (missable).', important: true },
+        { id: 'a1-salvage', title: 'Salvage Bench', location: 'Ogham Village', desc: 'Unlocks item salvage for materials; socket crafting loop.', important: false },
+        { id: 'a1-executioner', title: 'Uncut Support Gem', location: 'Ogham Manor Ramparts', desc: 'Defeat The Executioner.', important: false },
+      ],
+      'Act 2: Vastiri Desert': [
+        { id: 'a2-kabala', title: '+2 Weapon Set Points', location: 'Keth', desc: 'Kabala, Constrictor Queen. Found in the Venom Pit.', important: true },
+        { id: 'a2-garukhan', title: '+10% Lightning Resistance', location: 'Spires of Deshar', desc: 'Sisters of Garukhan shrine. Interact to gain the bonus.', important: true },
+        { id: 'a2-rel-altar', title: '+1 Charm Slot', location: 'Valley of the Titans', desc: 'Place Sun & Kabala Relics in the altar.', important: true },
+        { id: 'a2-servi', title: 'Servi\'s Quest Reward (Choice)', location: 'The Venom Crypts', desc: 'Choose: Stun Threshold / Ailment Threshold / Mana Regen.', important: true },
+        { id: 'a2-zal', title: 'Zalmarath', location: 'Titan Grotto', desc: 'Watch for falling ceiling debris shadows; big hits.', important: false },
+        { id: 'a2-goldentomb', title: 'High-Level Uncut Gem', location: 'The Lost City', desc: 'Loot the Golden Tomb.', important: false },
+      ],
+      'Act 3: Vaal Jungles': [
+        { id: 'a3-ignagduk', title: '+30 Max Spirit', location: 'The Azak Bog', desc: 'Ignagduk, The Bog Witch — CRITICAL for aura stacking.', important: true },
+        { id: 'a3-silverfist', title: '+2 Passive Points', location: 'Jungle Ruins', desc: 'Defeat Mighty Silverfist (Giant White Gorilla).', important: true },
+        { id: 'a3-blackjaw', title: '+10% Fire Resistance', location: "Jiquani's Machinarium", desc: 'Defeat Blackjaw. Requires Small Soul Cores for door.', important: true },
+        { id: 'a3-mektul', title: 'Reforging Bench (CRITICAL)', location: 'The Molten Vault', desc: 'Defeat Mektul, The Forgemaster. Unlocks Waystone crafting.', important: true },
+        { id: 'a3-blood', title: '+2 Passive Points', location: 'Aggorat', desc: 'Blood Sacrifice. Use Heart from Vaal Goliath.', important: true },
+        { id: 'a3-doryani', title: 'Act Boss: Doryani', location: 'The Vaal Jungles', desc: 'Multi-stage laser fight; mechanics check.', important: false },
+      ],
+      'Cruel Difficulty Loop': [
+        { id: 'cruel-ignagduk', title: '+40 Max Spirit', location: 'Azak Bog (Cruel)', desc: 'Ignagduk re-fight for late-campaign Spirit cap.', important: true },
+        { id: 'cruel-candlemass', title: '+8% Max Life', location: 'Ogham Manor (Cruel)', desc: 'Candlemass re-fight for permanent life.', important: true },
+        { id: 'cruel-venom-crypts', title: 'New Buffs (Choice)', location: 'Venom Crypts (Cruel)', desc: 'Chaos Res / Attributes / Reduced Slow Potency.', important: false },
+      ],
+    };
+
+    // ======================= Data: Classes/Ascendancies (Complete) =======================
+    const classData = [
+      {
+        name: 'Warrior', attr: 'Strength', ascendancies: [
+          { name: 'Titan', summary: 'Slams, stun thresholds, armor scaling.', keys: [
+            'Mountain Splitter (slam synergy)',
+            'Crushing Impacts: Crushing Blows; +25% vs Heavy Stunned',
+            'Stone Skin: +50% more Armour from Body Armour',
+            'Earthbreaker: 25% chance to cause Aftershock',
+            'Colossal Capacity: +20 inventory slots (utility/QoL)'
+          ]},
+          { name: 'Warbringer', summary: 'Warcries, corpse explosions, armor break.', keys: [
+            'Warcaller’s Bellow: Warcries explode corpses (25% life as phys)',
+            'Jade Heritage: Encase in Jade defensive stacks',
+            'Anvil’s Weight: Breaks armour equal to 10% of hit damage'
+          ]},
+          { name: 'Smith of Kitava', summary: 'Crafting, Living Weapon, Kitavan engravings.', keys: [
+            'Smith’s Masterwork: Use Normal body armour with scaling bonus',
+            'Living Weapon / Temper Weapon (on-the-fly augment)',
+            'Coal Stoker: Fire res also grants 50% value to Cold/Lightning',
+            'Kitavan Engraving: Ascendancy-crafted modifiers'
+          ]},
+        ]
+      },
+      {
+        name: 'Sorceress', attr: 'Intelligence', ascendancies: [
+          { name: 'Stormweaver', summary: 'Lightning/Cold caster; crit storms.', keys: [
+            'Tempest Caller: Elemental Storm on crit',
+            'Force of Will: 20% damage taken from Mana before Life',
+            'Multiplying Squalls: +2 Elemental Skill limit'
+          ]},
+          { name: 'Chronomancer', summary: 'Time manipulation, cooldowns, rifts.', keys: [
+            'Time Freeze (stop enemy action speed)',
+            'Temporal Rift (rewind position/status)',
+            'The Rapid River: Recoup occurs over 4s'
+          ]},
+          { name: 'Disciple of Varashta', summary: 'Djinn/Command hybrid; MoM+, ES→Armor.', keys: [
+            'Ruzhan, the Blazing Sword: Fire Djinn',
+            'Varashta’s Intuition: 100% of Elemental Damage from Mana before Life',
+            'Sacred Rituals: 60% of ES added to Armour for physical DR'
+          ]},
+        ]
+      },
+      {
+        name: 'Ranger', attr: 'Dexterity', ascendancies: [
+          { name: 'Deadeye', summary: 'Projectiles, mirages, mark automation.', keys: [
+            'Endless Munitions: +1 Projectile',
+            'Gathering Winds: Tailwind on skill use',
+            'Called Shots: Auto-apply linked Marks; chain off marked',
+            'Mirage: Create clones that mimic attacks'
+          ]},
+          { name: 'Pathfinder', summary: 'Poison doubling, flask mastery, sprinting.', keys: [
+            'Overwhelming Toxicity: Doubles max poison stacks',
+            'Enduring Elixirs: Life flasks don’t queue / not removed at full',
+            'Running Assault: Cannot be Heavy Stunned while sprinting'
+          ]},
+        ]
+      },
+      {
+        name: 'Witch', attr: 'Intelligence', ascendancies: [
+          { name: 'Infernalist', summary: 'Fire minions, demon form, life drain.', keys: [
+            'Demon Form: Massive cast speed; drains life',
+            'Pyromantic Pact: Replace Mana with Infernal Flame'
+          ]},
+          { name: 'Blood Mage', summary: 'Life casting and sustain.', keys: [
+            'Sanguimancy: Skills cost Life',
+            'Crimson Power: ES on armour adds to Max Life'
+          ]},
+          { name: 'Lich', summary: 'Minion bombs, unholy synergy.', keys: [
+            'Necromantic Conduit: Player/minions share Unholy Might',
+            'Rupture the Soul: Cursed enemies explode on death'
+          ]},
+        ]
+      },
+      {
+        name: 'Mercenary', attr: 'Str/Dex', ascendancies: [
+          { name: 'Witchhunter', summary: 'Anti-magic ward, cull, stability break.', keys: [
+            'Witchbane: Concentration bar (30% life) → break to stun',
+            'Sorcery Ward: Spell barrier at cost of Armour/Evasion',
+            'Pitiless Killer: Culling Strike scaling (to 5% on Unique)'
+          ]},
+          { name: 'Gemling Legionnaire', summary: 'Sockets/gems manipulation, extra skill slots.', keys: [
+            'Integrated Efficiency: +3 skill slots',
+            'Thaumaturgical Infusion: Resists per socket colors (+1% Max Res per 3 matching)'
+          ]},
+          { name: 'Tactician', summary: 'Grenades/turrets; assist mechanics.', keys: [
+            'Cannons, Ready!: +1 Totem limit; fires when you fire',
+            'Close Air Support: Mark for aerial bombardment'
+          ]},
+        ]
+      },
+      {
+        name: 'Monk', attr: 'Dex/Int', ascendancies: [
+          { name: 'Invoker', summary: 'Elemental melee triggers; ES/Eva → Spirit.', keys: [
+            'Lead Me Through Grace: ES/Evasion on armour → Spirit',
+            'Elemental Expression: Melee crits trigger spells',
+            'Unbound Avatar: Transform after building Fury'
+          ]},
+          { name: 'Acolyte of Chayula', summary: 'Chaos/ES; Darkness resource, void illusions.', keys: [
+            'Embrace the Darkness: Replace Spirit with Darkness',
+            'Chaos Mastery: Doubled Chaos Res',
+            'Grasp of the Void: Grants Void Illusion'
+          ]},
+        ]
+      },
+      {
+        name: 'Huntress (Datamined)', attr: 'Dexterity', ascendancies: [
+          { name: 'Amazon', summary: 'Spear + agility surges; crit overflow.', keys: [
+            'Critical Strike: Hit chance >100% converts to Crit Chance',
+            'Elemental Surge: Consuming charges triggers surges'
+          ]},
+          { name: 'Ritualist', summary: 'Sacrifice, trinkets, ring scaling.', keys: [
+            'Unfurled Finger: +1 Ring slot',
+            'Mystic Attunement: +25% bonuses from Rings/Amulets',
+            'Corrupted Lifeforce: Blood Boil skill'
+          ]},
+        ]
+      },
+      {
+        name: 'Druid (Datamined)', attr: 'Str/Int', ascendancies: [
+          { name: 'Shaman', summary: 'Bonded items/runes, Spirit scaling.', keys: [
+            'Wisdom of the Maji: Enables Bonded modifiers on Runes/Idols',
+            'Sacred Flow: +40 Spirit per empty Charm slot',
+            'Avatar of Evolution: Adaptive elemental DR'
+          ]},
+          { name: 'Oracle', summary: 'Fate manipulation; unlucky crits; inevitable hits.', keys: [
+            'The Lesser Harm: Enemy crits vs you are Unlucky',
+            'Forced Outcome: Hits reroll crit chance until success'
+          ]},
+        ]
+      },
+    ];
+
+    // ======================= UI: Navigation =======================
+    const Nav = ({ activeTab, setActiveTab }) => (
+      <nav className="fixed top-0 w-full bg-[#0b0b0e]/95 backdrop-blur border-b border-[#333] z-50 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <span className="text-xl font-cinzel text-amber-500 font-bold hidden md:block tracking-wider">Wraeclast Compendium</span>
+            <div className="flex space-x-1 overflow-x-auto no-scrollbar w-full md:w-auto">
+              {[ 'Systems', 'Classes', 'Combat', 'Bosses', 'Checklist', 'Crafting', 'Endgame', 'Tips' ].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-2 text-sm font-medium transition-all whitespace-nowrap rounded-t-md ${activeTab===tab? 'tab-active':'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+
+    // ======================= Components =======================
+    const Badge = ({ children, color='amber' }) => (
+      <span className={`text-[10px] bg-${color}-900/30 text-${color}-400 px-1 rounded border border-${color}-900`}>{children}</span>
+    );
+
+    const SectionHeader = ({ title, size='2xl' }) => (
+      <h2 className={`text-${size} font-cinzel text-amber-500 mb-4 border-b border-gray-800 pb-2`}>{title}</h2>
+    );
+
+    // Systems: includes Gem Architecture (Attribute Gating), Spirit Calculator, and Dual-Spec notes
+    const Systems = () => {
+      // Spirit Calculator state
+      const [useSceptre, setUseSceptre] = useState(true);
+      const [king, setKing] = useState(true);
+      const [ignagduk, setIgnagduk] = useState(true);
+      const [ignCruel, setIgnCruel] = useState(false);
+      const [gearFlat, setGearFlat] = useState(0);
+      const [gearPct, setGearPct] = useState(0);
+      const [heralds, setHeralds] = useState(0); // ~12 each
+      const [majorAuras, setMajorAuras] = useState(2); // ~25 each
+      const [metaGems, setMetaGems] = useState(0); // ~30 each
+      const [minions, setMinions] = useState(0); // ~5 each (approx)
+
+      const capacity = useMemo(() => {
+        let base = 100;
+        if (useSceptre) base += 100;
+        if (king) base += 30;
+        if (ignagduk) base += 30;
+        if (ignCruel) base += 40;
+        base += Number(gearFlat) || 0;
+        const mult = 1 + ((Number(gearPct) || 0) / 100);
+        return Math.floor(base * mult);
+      }, [useSceptre, king, ignagduk, ignCruel, gearFlat, gearPct]);
+
+      const reserved = useMemo(() => {
+        const heraldCost = 12;
+        const auraCost = 25;
+        const metaCost = 30;
+        const minionCost = 5;
+        return heralds*heraldCost + majorAuras*auraCost + metaGems*metaCost + minions*minionCost;
+      }, [heralds, majorAuras, metaGems, minions]);
+
+      const remaining = Math.max(0, capacity - reserved);
+
+      return (
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+          <div className="card p-6">
+            <SectionHeader title="1. The Decoupled Gem System" />
+            <p className="text-gray-300 mb-4"><strong>Sockets live on Gems.</strong> Every Active Skill can become a functional 6-link; supports are added via tiered Jeweller\'s Orbs.</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="subcard p-4 border-l-2 border-blue-500">
+                <h4 className="font-bold text-white mb-2">Socket Progression</h4>
+                <ul className="text-sm text-gray-300 space-y-1">
+                  <li>Tier 1 Jeweller\'s → 2 Sockets</li>
+                  <li>Tier 2 Jeweller\'s → 3 Sockets</li>
+                  <li>Tier 3+ Jeweller\'s → 4–6 Sockets</li>
+                </ul>
+              </div>
+              <div className="subcard p-4 border-l-2 border-red-500">
+                <h4 className="font-bold text-white mb-2">Attribute Gating</h4>
+                <p className="text-sm text-gray-300">Supports are not free power — they add stat requirements.</p>
+                <div className="mt-2 text-xs bg-black/30 p-2 rounded border border-[#333]">
+                  <div className="code text-amber-300">ReqTotal = ReqBase + Σ ReqSupports</div>
+                  <div className="text-gray-400 mt-1">Red Supports → Strength, Green → Dexterity, Blue → Intelligence.</div>
+                </div>
+              </div>
+              <div className="subcard p-4 border-l-2 border-purple-500">
+                <h4 className="font-bold text-white mb-2">Uncut Gems</h4>
+                <p className="text-sm text-gray-300">Drops are Uncut (by item level). Use the Gemcutting menu to pick any skill permitted at that level. Uncut Gems also level existing skills.</p>
+              </div>
+              <div className="subcard p-4 border-l-2 border-green-500">
+                <h4 className="font-bold text-white mb-2">Multiple 6-links</h4>
+                <p className="text-sm text-gray-300">Run dedicated clear, single-target, and movement skills simultaneously without sacrificing gear slots.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <SectionHeader title="2. Spirit System & Calculator" />
+            <p className="text-gray-300 mb-4">Mana is for casting. <strong>Spirit</strong> reserves for permanent effects: Auras, Heralds, Meta Gems, and Minions.</p>
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="subcard p-4 lg:col-span-2">
+                <h4 className="font-bold text-amber-400 mb-3">Spirit Calculator</h4>
+                <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={useSceptre} onChange={e=>setUseSceptre(e.target.checked)} /> Sceptre implicit (+100)</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={king} onChange={e=>setKing(e.target.checked)} /> King in the Mists (+30)</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={ignagduk} onChange={e=>setIgnagduk(e.target.checked)} /> Ignagduk A3 (+30)</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={ignCruel} onChange={e=>setIgnCruel(e.target.checked)} /> Ignagduk Cruel (+40)</label>
+                  <label className="flex items-center gap-2">Flat from gear <input className="w-20 bg-black/30 border border-[#333] rounded px-2 py-1" type="number" value={gearFlat} onChange={e=>setGearFlat(e.target.value)} /></label>
+                  <label className="flex items-center gap-2">Percent from gear <input className="w-20 bg-black/30 border border-[#333] rounded px-2 py-1" type="number" value={gearPct} onChange={e=>setGearPct(e.target.value)} />%</label>
+                </div>
+                <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
+                  <label className="flex items-center justify-between">Heralds (≈12 each)
+                    <input className="w-20 bg-black/30 border border-[#333] rounded px-2 py-1 ml-3" type="number" min="0" value={heralds} onChange={e=>setHeralds(+e.target.value||0)} />
+                  </label>
+                  <label className="flex items-center justify-between">Major Auras (≈25 each)
+                    <input className="w-20 bg-black/30 border border-[#333] rounded px-2 py-1 ml-3" type="number" min="0" value={majorAuras} onChange={e=>setMajorAuras(+e.target.value||0)} />
+                  </label>
+                  <label className="flex items-center justify-between">Meta Gems (≈30 each)
+                    <input className="w-20 bg-black/30 border border-[#333] rounded px-2 py-1 ml-3" type="number" min="0" value={metaGems} onChange={e=>setMetaGems(+e.target.value||0)} />
+                  </label>
+                  <label className="flex items-center justify-between">Permanent Minions (≈5 each)
+                    <input className="w-20 bg-black/30 border border-[#333] rounded px-2 py-1 ml-3" type="number" min="0" value={minions} onChange={e=>setMinions(+e.target.value||0)} />
+                  </label>
+                </div>
+                <div className="mt-4 grid sm:grid-cols-3 gap-3 text-center">
+                  <div className="p-3 rounded border border-amber-900/30 bg-amber-900/10">
+                    <div className="text-xs text-amber-300">Capacity</div>
+                    <div className="text-2xl font-bold text-amber-400">{capacity}</div>
+                  </div>
+                  <div className="p-3 rounded border border-blue-900/30 bg-blue-900/10">
+                    <div className="text-xs text-blue-300">Reserved</div>
+                    <div className="text-2xl font-bold text-blue-400">{reserved}</div>
+                  </div>
+                  <div className="p-3 rounded border border-green-900/30 bg-green-900/10">
+                    <div className="text-xs text-green-300">Remaining</div>
+                    <div className={`text-2xl font-bold ${remaining>0?'text-green-400':'text-red-400'}`}>{remaining}</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-400 mt-3">Example: 100 base +100 Sceptre +30 King +30 Ignagduk (+40 Cruel if checked) + gear affixes.
+                  Meta cost ranges with trigger frequency; adjust counts to fit your setup.</div>
+              </div>
+              <div className="subcard p-4">
+                <h4 className="font-bold text-blue-400 mb-3">Typical Reservation Costs</h4>
+                <ul className="space-y-2 text-sm text-gray-300">
+                  <li className="flex items-start"><span className="text-blue-500 mr-2">-</span><span><strong>Heralds</strong>: ~10–15</span></li>
+                  <li className="flex items-start"><span className="text-blue-500 mr-2">-</span><span><strong>Minor Auras</strong> (e.g., Arctic Armour): ~15–20</span></li>
+                  <li className="flex items-start"><span className="text-blue-500 mr-2">-</span><span><strong>Major Auras</strong> (Determination, Zealotry): ~20–30</span></li>
+                  <li className="flex items-start"><span className="text-blue-500 mr-2">-</span><span><strong>Meta Gems</strong> (Cast on Crit/Shock): ~20–50</span></li>
+                </ul>
+                <div className="mt-4 text-xs text-gray-300">
+                  <div><strong>Sceptre</strong>: strongest Spirit source for casters (+100 implicit).</div>
+                  <div><strong>Gear Affixes</strong>: +% Spirit on armour/amulet; uniques may grant flat Spirit.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <SectionHeader title="3. Dual-Specialization & WASD" />
+            <p className="text-gray-300">Assign skills to weapon sets and auto-swap. Optional WASD enables precise dodge timing.</p>
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <div className="subcard p-4 border border-blue-900">
+                <h4 className="font-bold text-blue-400 mb-2">Set 1 Example</h4>
+                <div className="text-sm text-gray-300 space-y-1">
+                  <div><strong>Weapon:</strong> Lightning Staff</div>
+                  <div><strong>Skill:</strong> Arc (6-link)</div>
+                  <div><strong>Passives:</strong> Lightning Damage, Shock, Cast Speed</div>
+                </div>
+              </div>
+              <div className="subcard p-4 border border-cyan-900">
+                <h4 className="font-bold text-cyan-400 mb-2">Set 2 Example</h4>
+                <div className="text-sm text-gray-300 space-y-1">
+                  <div><strong>Weapon:</strong> Cold Wand + Focus</div>
+                  <div><strong>Skill:</strong> Frost Bomb (6-link)</div>
+                  <div><strong>Passives:</strong> Cold Damage, Freeze, Crit</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 mt-3 border border-purple-900/30 bg-purple-900/10 rounded text-sm text-purple-200">
+              Combat Flow: Cast Arc → instant Staff swap → Lightning passives apply. Cast Frost Bomb → instant Wand swap → Cold passives apply.
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Classes = () => {
+      const [open, setOpen] = useState({});
+      const toggle = (name) => setOpen((s) => ({ ...s, [name]: !s[name] }));
+
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
+          <div className="grid lg:grid-cols-2 gap-6">
+            {classData.map((cls) => (
+              <div key={cls.name} className="card p-5 hover:border-amber-700 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{cls.name}</h3>
+                    <div className="text-xs text-gray-500">{cls.attr}</div>
+                  </div>
+                  <button className="text-xs text-gray-400 hover:text-amber-400 border border-[#333] px-2 py-1 rounded"
+                    onClick={() => toggle(cls.name)}>{open[cls.name] ? 'Hide' : 'Show'} Ascendancies</button>
+                </div>
+                {open[cls.name] && (
+                  <div className="mt-4 space-y-3">
+                    {cls.ascendancies.map((a) => (
+                      <div key={a.name} className="subcard p-4 border border-[#333]">
+                        <div className="flex items-center justify-between">
+                          <div className="font-bold text-white">{a.name}</div>
+                          <Badge>Key Mechanics</Badge>
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">{a.summary}</div>
+                        <ul className="mt-2 text-sm text-gray-300 list-disc pl-5 space-y-1">
+                          {a.keys.map((k, i) => (<li key={i}>{k}</li>))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    const Combat = () => (
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+        <div className="card p-6">
+          <SectionHeader title="Combat Physics" />
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="subcard p-4 border border-amber-900/30 hover:bg-[#25252b]">
+              <div className="text-amber-500 font-bold mb-2 flex items-center">Dodge Roll</div>
+              <p className="text-sm text-gray-300">I-frames vs hits/projectiles; no immunity to DoT/ground. No cooldown, animation-limited, scales with move speed.</p>
+            </div>
+            <div className="subcard p-4 border border-red-900/30 hover:bg-[#25252b]">
+              <div className="text-red-500 font-bold mb-2">Armor Breaking</div>
+              <p className="text-sm text-gray-300">Heavy hits reduce armor integrity. Maces/Slams apply high break values; open with a breaker then burst.</p>
+            </div>
+            <div className="subcard p-4 border border-blue-900/30 hover:bg-[#25252b]">
+              <div className="text-blue-500 font-bold mb-2">Stagger / Poise</div>
+              <p className="text-sm text-gray-300">Bosses have an Internal Stability bar. Hard CC + heavy damage fill it; on fill, boss staggers. DR ramps to prevent perma-lock.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <SectionHeader title="Armour Formula" size="xl" />
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="subcard p-4">
+              <div className="text-sm text-gray-300">Relative Physical Damage Reduction:</div>
+              <div className="mt-2 p-2 rounded border border-[#333] bg-black/30 code text-amber-300">DR = A / (A + 5 × D_raw)</div>
+              <ul className="mt-3 text-sm text-gray-300 space-y-1">
+                <li>A = Defender\'s Armour</li>
+                <li>D_raw = raw physical hit damage</li>
+              </ul>
+            </div>
+            <div className="subcard p-4">
+              <div className="text-sm text-gray-300">Rule of thumb:</div>
+              <div className="mt-2 text-amber-300">To mitigate ~50% of a hit, you need ~10× the hit damage in Armour.</div>
+              <div className="text-gray-400 text-sm mt-2">Armor excels vs many small hits; supplement with Fortify/Endurance for boss slams.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const Bosses = () => {
+      const [tab, setTab] = useState('act1');
+      const bossData = {
+        act1: [
+          { name: 'The Devourer', location: 'Mud Burrow', tip: 'Roll through the toxic wave, not away.', phase: 'Watch tremors before burrow; keep lateral movement.' },
+          { name: 'Count Geonor', location: 'Ogham Manor', tip: 'Break line of sight during Blood Beam.', phase: 'Hide behind pillars when channeling to avoid Corrupted Blood stacks.' },
+          { name: 'King in the Mists', location: 'Freythorn (Optional)', tip: 'CRITICAL: +30 Spirit reward.', phase: 'Dodge mist cones; prioritize stability breaks.' },
+        ],
+        act2: [
+          { name: 'Rathbreaker', location: 'Vastiri Outskirts', tip: 'Wait for the third slam to roll.', phase: 'Third slam tracks you — roll as the arm descends.' },
+          { name: 'Zalmarath', location: 'Titan Grotto', tip: 'Avoid falling debris from shadow telegraphs.', phase: 'Keep moving; avoid one-shot stalactite drops.' },
+          { name: 'Kabala, Constrictor Queen', location: 'Keth (Optional)', tip: '+2 Weapon Set Passives. Bring poison mitigation.', phase: 'Don\'t stand in green pools; burst during openings.' },
+        ],
+        act3: [
+          { name: 'Ignagduk, Bog Witch', location: 'Azak Bog (Optional)', tip: '+30 Spirit. Cap Chaos/Fire resists.', phase: 'During Infernal Corridor, get behind her or escape to wide end.' },
+          { name: 'Mektul, The Forgemaster', location: 'Molten Vault (Crafting Boss)', tip: 'Kite away from lava edge; avoid Stalagmites.', phase: 'He detonates nearby Stalagmites; focus on dodging Heated state.' },
+          { name: 'Doryani', location: 'Act 3 Boss', tip: 'Pattern learning fight; tight laser dodges.', phase: 'Use roll i-frames through narrow laser windows.' },
+        ],
+      };
+
+      return (
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+          <div className="text-center">
+            <h2 className="text-3xl font-cinzel text-amber-500">Boss Encounter Guide</h2>
+            <p className="text-gray-400">Mechanics and critical rewards</p>
+          </div>
+          <div className="flex gap-2 justify-center">
+            {['act1','act2','act3'].map(k => (
+              <button key={k} onClick={()=>setTab(k)} className={`px-4 py-2 rounded font-bold uppercase ${tab===k?'bg-amber-600 text-white':'bg-[#1e1e24] text-gray-400 hover:bg-[#25252b]'}`}>Act {k.slice(-1)}</button>
+            ))}
+          </div>
+          <div className="space-y-4">
+            {bossData[tab].map((b, idx) => (
+              <div key={idx} className="card overflow-hidden hover:border-amber-700">
+                <div className="bg-[#1e1e24] px-4 py-3 border-b border-[#333] flex items-center justify-between">
+                  <h3 className="font-bold text-white text-lg">{b.name}</h3>
+                  <span className="text-xs text-amber-500 border border-amber-700 px-2 py-1 rounded">{b.location}</span>
+                </div>
+                <div className="p-4 grid md:grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-amber-400">STRATEGY</div>
+                    <div className="text-sm text-gray-300 mt-1">{b.tip}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-blue-400">PHASE TIP</div>
+                    <div className="text-sm text-gray-400 mt-1">{b.phase}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    const Checklist = () => {
+      const [checked, setChecked] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('poe2-compendium-check')||'{}'); } catch { return {}; }
+      });
+
+      const toggle = (id) => {
+        const next = { ...checked, [id]: !checked[id] };
+        setChecked(next);
+        localStorage.setItem('poe2-compendium-check', JSON.stringify(next));
+      };
+
+      const resetAll = () => {
+        setChecked({});
+        localStorage.removeItem('poe2-compendium-check');
+      };
+
+      return (
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+          <div className="text-center">
+            <h2 className="text-3xl font-cinzel text-amber-500">Campaign Missables Tracker</h2>
+            <p className="text-gray-400">Permanent rewards by Act — never miss power spikes</p>
+          </div>
+
+          {Object.entries(missablesData).map(([act, items]) => (
+            <div key={act} className="card overflow-hidden">
+              <div className="bg-[#1e1e24] px-4 py-2 border-b border-[#333] flex justify-between items-center">
+                <h3 className="font-bold text-amber-500">{act}</h3>
+                <span className="text-xs text-gray-500">{items.filter(i=>checked[i.id]).length}/{items.length}</span>
+              </div>
+              <div>
+                {items.map((item) => (
+                  <div key={item.id} onClick={()=>toggle(item.id)}
+                       className={`p-4 border-b border-[#222] last:border-0 cursor-pointer flex items-start gap-4 hover:bg-[#25252b] transition-colors ${checked[item.id]?'opacity-40':''}`}>
+                    <div className={`w-5 h-5 mt-1 rounded border flex-shrink-0 flex items-center justify-center ${checked[item.id] ? 'bg-amber-600 border-amber-600' : 'border-gray-600'}`}>
+                      {checked[item.id] && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-200">{item.title}</span>
+                        {item.important && <span className="text-[10px] bg-red-900/30 text-red-400 px-1 rounded border border-red-900">CRITICAL</span>}
+                      </div>
+                      <p className="text-sm text-gray-400"><span className="text-amber-700 font-semibold">{item.location}</span> — {item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="text-center">
+            <button onClick={resetAll} className="text-xs text-gray-500 underline hover:text-amber-500">Reset All</button>
+          </div>
+        </div>
+      );
+    };
+
+    const Crafting = () => {
+      const runeData = [
+        { name: 'Iron Rune', weapon: 'Adds Physical Damage', armor: 'Flat Armour', tip: 'Warriors/Mercenaries' },
+        { name: 'Glacial Rune', weapon: 'Adds Cold Damage', armor: '+Cold Resistance', tip: 'Act 1 Resists' },
+        { name: 'Desert Rune', weapon: 'Adds Fire Damage', armor: '+Fire Resistance', tip: 'Act 2 Resists' },
+        { name: 'Storm Rune', weapon: 'Adds Lightning Damage', armor: '+Lightning Resistance', tip: 'Act 2/3 Resists' },
+        { name: 'Body Rune', weapon: 'Life Leech', armor: 'Maximum Life', tip: 'Universal Survival' },
+        { name: 'Mind Rune', weapon: 'Mana Leech', armor: 'Maximum Mana', tip: 'Caster Sustain' },
+        { name: 'Rebirth Rune', weapon: 'Life on Kill', armor: 'Life Regeneration', tip: 'Sustain' },
+      ];
+
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="card p-6">
+              <SectionHeader title="Currency Hierarchy" size="xl" />
+              <div className="space-y-3">
+                <div className="subcard p-3 border-l-4 border-amber-600">
+                  <div className="flex justify-between items-center"><span className="font-bold">Gold</span><span className="text-xs text-gray-500">Non-tradable</span></div>
+                  <p className="text-xs text-gray-400 mt-1">Vendors, Gambling, Respec, Currency Exchange tax.</p>
+                </div>
+                <div className="subcard p-3 border-l-4 border-yellow-600">
+                  <div className="flex justify-between items-center"><span className="font-bold text-currency">Chaos Orb</span><span className="text-xs text-gray-500">Mid-tier trade</span></div>
+                  <p className="text-xs text-gray-400 mt-1">Rerolls Rare items; standard trading unit.</p>
+                </div>
+                <div className="subcard p-3 border-l-4 border-blue-600">
+                  <div className="flex justify-between items-center"><span className="font-bold text-magic">Exalted Orb</span><span className="text-xs text-gray-500">High-end crafting</span></div>
+                  <p className="text-xs text-gray-400 mt-1">Adds a modifier to Rare items.</p>
+                </div>
+                <div className="subcard p-3 border-l-4 border-purple-600">
+                  <div className="flex justify-between items-center"><span className="font-bold text-unique">Divine Orb</span><span className="text-xs text-gray-500">High-value trade</span></div>
+                  <p className="text-xs text-gray-400 mt-1">Rerolls explicit values on items.</p>
+                </div>
+              </div>
+            </div>
+            <div className="card p-6">
+              <SectionHeader title="Crafting Tools" size="xl" />
+              <div className="space-y-3 text-sm">
+                <div className="subcard p-3"><h4 className="font-bold text-white">Artificer\'s Orb</h4><p className="text-xs text-gray-400">Adds rune sockets to gear. Primary way to fix resistances during campaign.</p></div>
+                <div className="subcard p-3"><h4 className="font-bold text-white">Jeweller\'s Orb (Tiered)</h4><p className="text-xs text-gray-400">Adds sockets to Gems. T1→2, T2→3, T3+→4–6.</p></div>
+                <div className="subcard p-3"><h4 className="font-bold text-white">Salvage Bench</h4><p className="text-xs text-gray-400">Destroy items for materials. Socketed items → Artificer Shards.</p></div>
+                <div className="subcard p-3"><h4 className="font-bold text-white">Essences</h4><p className="text-xs text-gray-400">Guarantee specific stats; cornerstone of deterministic crafting.</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <SectionHeader title="Rune Socket Guide" size="xl" />
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-gray-500 uppercase bg-[#1e1e24]">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Rune</th>
+                    <th className="px-3 py-2 text-left">Weapon Effect</th>
+                    <th className="px-3 py-2 text-left">Armor Effect</th>
+                    <th className="px-3 py-2 text-left">Best Use</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#333]">
+                  {runeData.map(r => (
+                    <tr key={r.name} className="hover:bg-[#1e1e24]">
+                      <td className="px-3 py-2 font-medium text-amber-400">{r.name}</td>
+                      <td className="px-3 py-2 text-gray-300">{r.weapon}</td>
+                      <td className="px-3 py-2 text-gray-300">{r.armor}</td>
+                      <td className="px-3 py-2 text-gray-400 text-xs">{r.tip}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 p-3 bg-amber-900/10 border border-amber-900/30 rounded text-xs text-amber-200">
+              <strong>Bonded Runes:</strong> Certain runes have a <em>Bonded</em> property (e.g., Farrul\'s). Their secondary effects only activate if you have the Shaman ascendancy node <em>Wisdom of the Maji</em>.
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="card p-6">
+              <SectionHeader title="Endgame Soul Cores" size="xl" />
+              <ul className="text-sm text-gray-300 space-y-2">
+                <li><span className="font-bold">Soul Core of Azcapa</span>: +15 Spirit (Weapon) / +10% Gold Find (Gloves)</li>
+                <li><span className="font-bold">Soul Core of Topotante</span>: 15% Ele Res Penetration (Weapon) / +25% Ailment Threshold (Boots)</li>
+                <li><span className="font-bold">Soul Core of Ticaba</span>: +12% Crit Damage (Weapon) / -20% Crit Damage Taken (Armor)</li>
+              </ul>
+            </div>
+            <div className="card p-6">
+              <SectionHeader title="Verified Vendor Recipes" size="xl" />
+              <ul className="text-sm text-gray-300 space-y-2">
+                <li>Cartographer\'s Chisel: <span className="text-gray-400">Stone Hammer (20% Quality) + Map</span></li>
+                <li>Movement Speed Boots: <span className="text-gray-400">Normal Boots + Quicksilver Flask + Orb of Augmentation</span> → 10% MS</li>
+                <li>Physical Weapon: <span className="text-gray-400">Weapon + Blacksmith\'s Whetstone + Rustic Sash (Rare/Magic)</span> → % Phys Damage</li>
+                <li>Spell Weapon: <span className="text-gray-400">Caster Weapon + Blacksmith\'s Whetstone + Chain Belt (Rare/Magic)</span> → % Spell Damage</li>
+                <li>Chaos Recipe: <span className="text-gray-400">Full Rare Set ilvl 60–74</span> → 1 Chaos (2 if Unidentified)</li>
+                <li>Gem Level Down: <span className="text-gray-400">Gem + Orb of Scouring</span> → -1 Level</li>
+                <li>Skill Gem Reset: <span className="text-gray-400">Gem + Orb of Regret</span> → Level 1</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Endgame = () => (
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+        <div className="card p-6">
+          <SectionHeader title="The Waystone Loop" />
+          <p className="text-gray-300 mb-4">Access the Atlas with <strong>Waystones</strong> (Maps replacement) and amplify with <strong>Precursor Tablets</strong>.</p>
+          <div className="grid md:grid-cols-3 gap-4 text-center mb-4">
+            <div className="subcard p-4 border border-amber-700"><div className="text-3xl mb-2">📜</div><div className="font-bold">Craft Waystone</div><div className="text-xs text-gray-400 mt-1"><span className="text-amber-400">Prefixes = Rewards</span>, <span className="text-red-400">Suffixes = Difficulty</span></div></div>
+            <div className="subcard p-4 border border-blue-700"><div className="text-3xl mb-2">⚡</div><div className="font-bold">Socket Tablets</div><div className="text-xs text-gray-400 mt-1">Add league mechanics deterministically</div></div>
+            <div className="subcard p-4 border border-purple-700"><div className="text-3xl mb-2">🌳</div><div className="font-bold">Atlas Passives</div><div className="text-xs text-gray-400 mt-1">Spec for your target mechanic</div></div>
+          </div>
+          <div className="bg-amber-900/10 border border-amber-900/30 rounded p-4 text-sm text-gray-300">
+            Juicing: High-tier Waystone with Rarity/Gold prefixes + 3× matching Tablets (e.g., Breach) + Atlas specialization = extreme density and rewards.
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="card p-6">
+            <SectionHeader title="Waystone Modifiers" size="xl" />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-green-400 font-bold text-sm mb-1">Prefixes (Rewards)</h4>
+                <ul className="text-xs text-gray-300 space-y-1">
+                  <li>Increased Item Rarity / Quantity</li>
+                  <li>Additional Gold Drops</li>
+                  <li>Pack Size +X%</li>
+                  <li>Additional Tablet Slots</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-red-400 font-bold text-sm mb-1">Suffixes (Difficulty)</h4>
+                <ul className="text-xs text-gray-300 space-y-1">
+                  <li>Monsters deal X% extra Elemental Damage</li>
+                  <li>Players are Cursed (e.g., Vulnerability)</li>
+                  <li>Monsters have +X% Critical Chance</li>
+                  <li>Players have -X% Recovery Rate</li>
+                  <li>Area contains hazardous ground (Desecrated, etc.)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="card p-6">
+            <SectionHeader title="Precursor Tablets" size="xl" />
+            <ul className="space-y-2 text-sm">
+              <li className="flex"><span className="w-24 text-purple-400 font-bold">Breach</span><span className="text-gray-300">XP density, splinters</span></li>
+              <li className="flex"><span className="w-24 text-gray-400 font-bold">Delirium</span><span className="text-gray-300">High difficulty, cluster jewels</span></li>
+              <li className="flex"><span className="w-24 text-amber-400 font-bold">Expedition</span><span className="text-gray-300">Haggle currency, runed encounters</span></li>
+              <li className="flex"><span className="w-24 text-red-400 font-bold">Overseer</span><span className="text-gray-300">Adds map bosses with unique loot tables</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <SectionHeader title="Trials of Ascendancy" />
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="subcard p-4 border border-yellow-900/40">
+              <h4 className="font-bold text-yellow-300 mb-2">Trial of the Sekhemas (Sanctum-style)</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>Honour Bar: Non-regenerating HP for the run</li>
+                <li>Buy Boons between rooms to stabilize</li>
+                <li>Boss: Zarokh, the Temporal</li>
+                <li>Rewards: Ascendancy Points, Jewels, Relics</li>
+              </ul>
+            </div>
+            <div className="subcard p-4 border border-red-900/40">
+              <h4 className="font-bold text-red-300 mb-2">Trial of Chaos (Ultimatum-style)</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>10 rounds; pick a stacking Tribulation each round</li>
+                <li>Avoid: Reduced Recovery, Damaged Defenses</li>
+                <li>Boss: Trialmaster (Round 10)</li>
+                <li>Rewards: Ascendancy Points, Soul Cores, Vaal Orbs</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const Tips = () => (
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+        <div className="card p-6">
+          <SectionHeader title="Quality of Life & Commands" />
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-bold text-red-400 mb-2">Common Mistakes</h3>
+              <ul className="list-disc pl-5 text-sm text-gray-300 space-y-1">
+                <li><strong className="text-white">Skipping Optional Bosses:</strong> Missing Ignagduk/King in the Mists cripples Spirit capacity.</li>
+                <li><strong className="text-white">Hoarding Gold:</strong> Spend early at the Gambler for gear spikes.</li>
+                <li><strong className="text-white">Ignoring Uncut Levels:</strong> High-level skills are massive power spikes.</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold text-blue-400 mb-2">Chat Commands</h3>
+              <ul className="bg-[#1e1e24] p-3 rounded text-sm font-mono text-gray-300 space-y-2">
+                <li><span className="text-amber-500">/hideout</span> — Teleport to hideout (from town)</li>
+                <li><span className="text-amber-500">/passives</span> — Check missing passive points</li>
+                <li><span className="text-amber-500">/deaths</span> — Check death count</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="card p-6">
+            <SectionHeader title="Chase Uniques" size="xl" />
+            <ul className="text-sm text-gray-300 space-y-2">
+              <li><span className="font-bold">Headhunter (Leather Belt)</span>: Steal rare mod powers while mapping.</li>
+              <li><span className="font-bold">Astramentis (Stellar Amulet)</span>: +80–100 to all Attributes; solve Attribute Gating.</li>
+              <li><span className="font-bold">Svalinn (Shield)</span>: Lucky Block chance (roll twice).</li>
+            </ul>
+          </div>
+          <div className="card p-6">
+            <SectionHeader title="Trade Systems" size="xl" />
+            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+              <div className="subcard p-3 border border-green-900/30">
+                <h4 className="font-bold text-green-400 mb-1">Currency Exchange (Instant)</h4>
+                <ul className="text-gray-300 space-y-1 text-xs">
+                  <li>Fungible items (Orbs, Essences)</li>
+                  <li>Instant buyout</li>
+                  <li>Gold tax per trade</li>
+                  <li>Great for bulk currency swaps</li>
+                </ul>
+              </div>
+              <div className="subcard p-3 border border-blue-900/30">
+                <h4 className="font-bold text-blue-400 mb-1">Direct Trade (Manual)</h4>
+                <ul className="text-gray-300 space-y-1 text-xs">
+                  <li>Non-fungible gear (specific rolls)</li>
+                  <li>Use pathofexile.com/trade2</li>
+                  <li>Whisper seller; trade in hideout</li>
+                  <li>Face-to-face exchange</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center p-8 text-gray-500 text-sm">Good luck, Exile. May your mirrors be plentiful and your deaths few.</div>
+      </div>
+    );
+
+    const App = () => {
+      const [activeTab, setActiveTab] = useState('Systems');
+      const renderContent = () => {
+        switch (activeTab) {
+          case 'Systems': return <Systems/>;
+          case 'Classes': return <Classes/>;
+          case 'Combat': return <Combat/>;
+          case 'Bosses': return <Bosses/>;
+          case 'Checklist': return <Checklist/>;
+          case 'Crafting': return <Crafting/>;
+          case 'Endgame': return <Endgame/>;
+          case 'Tips': return <Tips/>;
+          default: return <Systems/>;
+        }
+      };
+
+      return (
+        <div className="min-h-screen pb-20 pt-16">
+          <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
+          {renderContent()}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App/>);
+  </script>
+</body>
+</html>
